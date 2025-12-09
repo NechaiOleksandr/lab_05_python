@@ -1,29 +1,40 @@
+def validate_report(report):
+    if not isinstance(report, tuple) or len(report) != 3:
+        return False
+
+    if not all(isinstance(item, str) for item in report):
+        return False
+
+    title, author, format_type = report
+
+    if not title or not author or not format_type:
+        return False
+
+    return True
+
+
+def criteria(report, output_format, keyword):
+    title, author, format_type = report
+    format_match = format_type == output_format
+    keyword_match = keyword in title or keyword in author
+    return format_match and keyword_match
+
+
 def filter_reports(reports, output_format, keyword):
-    filtered_reports = []
+    valid_reports = []
     errors = []
 
     for report in reports:
-        if not isinstance(report, tuple):
+        if validate_report(report):
+            valid_reports.append(report)
+        else:
             errors.append(report)
-            continue
 
-        if len(report) != 3:
-            errors.append(report)
-            continue
+    filtered_reports = []
 
-        title, author, format = report
-
-        if not (isinstance(title, str) and isinstance(author, str) and isinstance(format, str)):
-            errors.append(report)
-            continue
-
-        if not title or not author or not format:
-            errors.append(report)
-            continue
-
-        if format == output_format:
-            if keyword in title or keyword in author:
-                filtered_reports.append(report)
+    for report in valid_reports:
+        if criteria(report, output_format, keyword):
+            filtered_reports.append(report)
 
     return {
         "filtered_reports": filtered_reports,
@@ -31,8 +42,6 @@ def filter_reports(reports, output_format, keyword):
         "errors": errors
     }
 
-
-# --- Тестування (Зразок виклику) ---
 result = filter_reports(
     [
         ("Звіт1", "Іван Іванов", "pdf"),
