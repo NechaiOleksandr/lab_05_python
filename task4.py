@@ -9,6 +9,37 @@ def is_valid_date(date_str, date_format="%Y-%m-%d"):
         return False
 
 
+def validate_expense_item(item):
+    if not isinstance(item, tuple) or len(item) != 3:
+        return False
+
+    amount, category, date_str = item
+
+    is_amount_valid = isinstance(amount, (int, float))
+    is_category_valid = isinstance(category, str)
+    is_date_type_valid = isinstance(date_str, str)
+
+    return is_amount_valid and is_category_valid and is_date_type_valid
+
+
+def update_category_totals(category_totals, amount, category):
+    category_totals[category] = category_totals.get(category, 0) + amount
+
+
+def track_max_expense(current_max, item):
+    amount = item[0]
+
+    if current_max is None:
+        return item
+
+    max_amount = current_max[0]
+
+    if amount > max_amount:
+        return item
+
+    return current_max
+
+
 def analyze_expenses(expenses):
     result = {
         "category_totals": {},
@@ -18,34 +49,19 @@ def analyze_expenses(expenses):
     }
 
     for item in expenses:
-        if not isinstance(item, tuple) or len(item) != 3:
+        if not validate_expense_item(item):
             result["errors"].append(item)
             continue
 
         amount, category, date_str = item
 
-        is_amount_valid = isinstance(amount, (int, float))
-        is_category_valid = isinstance(category, str)
-        is_date_type_valid = isinstance(date_str, str)
-
-        if not (is_amount_valid and is_category_valid and is_date_type_valid):
-            result["errors"].append(item)
-            continue
-
         if not is_valid_date(date_str):
             result["invalid_dates"].append(date_str)
             continue
 
-        if category in result["category_totals"]:
-            result["category_totals"][category] += amount
-        else:
-            result["category_totals"][category] = amount
+        update_category_totals(result["category_totals"], amount, category)
 
-        if result["max_expense"] is None:
-            result["max_expense"] = item
-        else:
-            if amount > result["max_expense"][0]:
-                result["max_expense"] = item
+        result["max_expense"] = track_max_expense(result["max_expense"], item)
 
     return result
 
